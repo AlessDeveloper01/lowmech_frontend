@@ -17,6 +17,7 @@
   "dependencies": {
     "@stripe/stripe-js": "^9.2.0",
     "@tailwindcss/vite": "^4.2.2",
+    "better-auth": "^1.6.9",
     "lucide-vue-next": "^1.0.0",
     "pinia": "^3.0.4",
     "sweetalert2": "^11.26.24",

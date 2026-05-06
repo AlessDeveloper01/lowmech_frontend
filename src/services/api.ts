@@ -36,6 +36,7 @@ class ApiService {
       method,
       headers: this.headers(),
       body: body ? JSON.stringify(body) : undefined,
+      credentials: 'include',
     })
 
     if (!res.ok) {

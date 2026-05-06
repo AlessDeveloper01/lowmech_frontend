@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { api } from '@/services/api'
+import { authClient } from '@/services/betterAuth'
 
 const STORAGE_KEY = 'lowmech_auth'
 
@@ -51,18 +52,10 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  /** Verifica si el email existe y si ya tiene contraseña */
-  async function clienteCheck(email: string): Promise<{ needsPassword: boolean }> {
-    return api.post<{ needsPassword: boolean }>('/auth/cliente/check', { email })
-  }
-
-  /** Primer acceso: establece contraseña y autentica */
-  async function clienteSetPassword(
-    email: string,
-    password: string,
-  ): Promise<{ success: boolean; error?: string }> {
+  /** Intercambia sesión Better Auth por JWT interno */
+  async function clienteExchange(): Promise<{ success: boolean; error?: string }> {
     try {
-      const data = await api.post<LoginResponse>('/auth/cliente/set-password', { email, password })
+      const data = await api.post<LoginResponse>('/auth/cliente/exchange', {})
       api.setToken(data.access_token)
       user.value = data.user
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data.user))
@@ -72,23 +65,10 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  /** Login de cliente con email + contraseña */
-  async function clienteLogin(
-    email: string,
-    password: string,
-  ): Promise<{ success: boolean; error?: string }> {
-    try {
-      const data = await api.post<LoginResponse>('/auth/cliente/login', { email, password })
-      api.setToken(data.access_token)
-      user.value = data.user
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data.user))
-      return { success: true }
-    } catch (e) {
-      return { success: false, error: (e as Error).message }
+  async function logout() {
+    if (isCliente.value) {
+      await authClient.signOut().catch(() => {})
     }
-  }
-
-  function logout() {
     user.value = null
     api.setToken(null)
     localStorage.removeItem(STORAGE_KEY)
@@ -102,9 +82,7 @@ export const useAuthStore = defineStore('auth', () => {
     isRecepcionista,
     rol,
     login,
-    clienteCheck,
-    clienteSetPassword,
-    clienteLogin,
+    clienteExchange,
     logout,
   }
 })

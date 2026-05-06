@@ -4,6 +4,7 @@ import logoImg from '@/assets/images/logo.png'
 defineProps<{
   size?: 'sm' | 'md' | 'lg'
   showText?: boolean
+  light?: boolean
 }>()
 </script>
 
@@ -28,12 +29,11 @@ defineProps<{
     />
     <figcaption
       v-if="showText !== false"
-      class="font-bold tracking-[0.08em] text-body leading-none"
-      :class="{
-        'text-[1.3rem]': size === 'sm',
-        'text-[1.6rem]': size === 'md' || !size,
-        'text-[2.2rem]': size === 'lg',
-      }"
+      class="font-bold tracking-[0.08em] leading-none"
+      :class="[
+        light ? 'text-white' : 'text-body',
+        size === 'sm' ? 'text-[1.3rem]' : size === 'lg' ? 'text-[2.2rem]' : 'text-[1.6rem]',
+      ]"
     >
       LowMech
     </figcaption>
