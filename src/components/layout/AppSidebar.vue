@@ -66,7 +66,6 @@ function isActive(ruta: string): boolean {
 </script>
 
 <template>
-    <template>
 <div
     v-if="!collapsed"
     class="fixed inset-0 z-[999] bg-black/50 hidden max-[768px]:block"
@@ -178,5 +177,4 @@ function isActive(ruta: string): boolean {
       </button>
     </footer>
   </aside>
-</template>
 </template>
