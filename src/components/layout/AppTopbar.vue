@@ -20,9 +20,9 @@ const initials = displayName
   .slice(0, 2)
   .join('')
 
-function handleLogout() {
-  auth.logout()
-  router.push({ name: 'login' })
+async function handleLogout() {
+  await auth.logout()
+  router.replace({ name: 'login' })
 }
 
 const today = new Date().toLocaleDateString('es-MX', {

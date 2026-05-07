@@ -2,6 +2,7 @@
 import { ref, computed, inject, onMounted, type Ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useInventarioStore } from '@/stores/inventario'
+import { api } from '@/services/api'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import AppTopbar from '@/components/layout/AppTopbar.vue'
 import Swal from 'sweetalert2'
@@ -29,7 +30,11 @@ const form = ref({
   proveedor: '',
   ubicacion: '',
   notas: '',
+  imagenUrl: '',
 })
+
+const imagenFile = ref<File | null>(null)
+const imagenPreview = computed(() => form.value.imagenUrl || '')
 
 const errores = ref<Record<string, string>>({})
 
@@ -101,10 +106,32 @@ onMounted(async () => {
         proveedor: item.proveedor,
         ubicacion: item.ubicacion,
         notas: item.notas,
+        imagenUrl: item.imagenUrl || '',
       }
     }
   }
 })
+
+async function handleImagenChange(e: Event) {
+  const target = e.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+  const reader = new FileReader()
+  reader.onloadend = async () => {
+    const base64 = reader.result as string
+    try {
+      const { url } = await api.post<{ url: string }>('/inventario/upload', { imagen: base64 })
+      form.value.imagenUrl = url
+    } catch {
+      Swal.fire({ title: 'Error', text: 'No se pudo subir la imagen', icon: 'error' })
+    }
+  }
+  reader.readAsDataURL(file)
+}
+
+function quitarImagen() {
+  form.value.imagenUrl = ''
+}
 
 const inputClass =
   'px-4 py-3 text-[1.4rem] text-body dark:text-dk-body bg-surface dark:bg-dk-surface border border-border dark:border-dk-border outline-none focus:border-primary transition-colors placeholder:text-muted dark:placeholder:text-dk-muted'
@@ -359,6 +386,40 @@ const inputClass =
                     </dd>
                   </p>
                 </dl>
+              </section>
+
+              <!-- Imagen -->
+              <section
+                class="bg-surface dark:bg-dk-surface border border-border dark:border-dk-border p-8"
+              >
+                <header class="flex items-center justify-between mb-4">
+                  <h3 class="text-[1.4rem] font-bold text-body dark:text-dk-body">Imagen</h3>
+                  <span class="text-[1.1rem] text-muted dark:text-dk-muted">Opcional</span>
+                </header>
+                <div v-if="imagenPreview" class="flex flex-col gap-3">
+                  <img
+                    :src="imagenPreview"
+                    alt="Preview"
+                    class="w-full h-40 object-contain rounded border border-border dark:border-dk-border bg-bg dark:bg-dk-bg"
+                  />
+                  <button
+                    type="button"
+                    class="text-[1.2rem] font-medium text-red-500 bg-transparent border-none cursor-pointer hover:opacity-70 transition-opacity text-left"
+                    @click="quitarImagen"
+                  >
+                    Quitar imagen
+                  </button>
+                </div>
+                <label
+                  v-else
+                  class="flex flex-col items-center justify-center gap-2 w-full h-32 border-2 border-dashed border-border dark:border-dk-border rounded cursor-pointer hover:border-primary transition-colors"
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-muted dark:text-dk-muted">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span class="text-[1.2rem] text-muted dark:text-dk-muted">Haz clic para subir imagen</span>
+                  <input type="file" accept="image/*" class="hidden" @change="handleImagenChange" />
+                </label>
               </section>
 
               <!-- Notas -->

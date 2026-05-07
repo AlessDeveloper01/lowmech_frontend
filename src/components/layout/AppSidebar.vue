@@ -67,7 +67,7 @@ function isActive(ruta: string): boolean {
 
 <template>
   <aside
-    class="fixed left-0 top-0 h-screen bg-navy flex flex-col z-[1000] transition-all duration-300 ease-out overflow-hidden max-[768px]:-translate-x-full"
+    class="fixed left-0 top-0 h-screen bg-navy flex flex-col z-[1000] transition-all duration-300 ease-out max-[768px]:-translate-x-full"
     :class="collapsed ? 'w-[6.4rem]' : 'w-[22rem]'"
   >
     <!-- Logo -->
@@ -87,7 +87,7 @@ function isActive(ruta: string): boolean {
         v-for="item in navItems"
         :key="item.label"
         :to="{ name: item.route }"
-        class="relative flex items-center h-[4.2rem] px-3 text-[1.3rem] font-medium no-underline transition-all duration-200 whitespace-nowrap"
+        class="group relative flex items-center h-[4.2rem] px-3 text-[1.3rem] font-medium no-underline transition-all duration-200 whitespace-nowrap"
         :class="
           isActive(item.route)
             ? 'text-white bg-white/10'
@@ -109,6 +109,17 @@ function isActive(ruta: string): boolean {
           :class="collapsed ? 'max-w-0 opacity-0' : 'max-w-[14rem] opacity-100'"
         >
           {{ item.label }}
+        </span>
+
+        <!-- Tooltip solo cuando colapsado -->
+        <span
+          v-if="collapsed"
+          class="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 px-3 py-1.5 bg-surface text-body text-[1.2rem] font-medium rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-[2000]"
+        >
+          {{ item.label }}
+          <span
+            class="absolute left-0 top-1/2 -translate-x-1 -translate-y-1/2 w-2 h-2 bg-surface rotate-45"
+          ></span>
         </span>
       </router-link>
     </nav>

@@ -30,6 +30,7 @@ interface Orden {
   checklistPruebas: boolean
   checklistLimpieza: boolean
   serviciosCompletados: string
+  imagenUrl?: string
   createdAt: string
   subtotal: number
   iva: number
@@ -174,8 +175,64 @@ async function toggleCheck(item: 'diagnostico' | 'reparacion' | 'pruebas' | 'lim
   }
 }
 
+const modalImagenVisible = ref(false)
+const imagenUrlPendiente = ref('')
+const estadoPendiente = ref('')
+const estadosFinales = ['completado', 'entregado', 'finalizado']
+
+async function handleImagenEstadoChange(e: Event) {
+  const target = e.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+  const reader = new FileReader()
+  reader.onloadend = async () => {
+    const base64 = reader.result as string
+    try {
+      const { url } = await api.post<{ url: string }>('/ordenes/upload', { imagen: base64 })
+      imagenUrlPendiente.value = url
+    } catch (err: any) {
+      const msg = err?.message || 'No se pudo subir la imagen'
+      Swal.fire({ title: 'Error', text: msg, icon: 'error' })
+    }
+  }
+  reader.readAsDataURL(file)
+}
+
+function quitarImagenEstado() {
+  imagenUrlPendiente.value = ''
+}
+
+async function confirmarEstadoConImagen() {
+  if (!orden.value || !estadoPendiente.value) return
+  if (!imagenUrlPendiente.value) {
+    Swal.fire({ title: 'Imagen requerida', text: 'Sube una imagen para finalizar la orden.', icon: 'warning' })
+    return
+  }
+  modalImagenVisible.value = false
+  saving.value = true
+  try {
+    await api.put(`/ordenes/${orden.value.id}/estado`, { estado: estadoPendiente.value, imagenUrl: imagenUrlPendiente.value })
+    orden.value = { ...orden.value, estado: estadoPendiente.value }
+    Swal.fire('Estado actualizado', '', 'success')
+  } catch (e) {
+    Swal.fire('Error', (e as Error).message, 'error')
+  } finally {
+    saving.value = false
+  }
+  estadoPendiente.value = ''
+  imagenUrlPendiente.value = ''
+}
+
 async function cambiarEstado(estado: string) {
   if (!orden.value) return
+
+  if (estadosFinales.includes(estado) && !orden.value.imagenUrl) {
+    estadoPendiente.value = estado
+    imagenUrlPendiente.value = ''
+    modalImagenVisible.value = true
+    return
+  }
+
   saving.value = true
   try {
     await api.put(`/ordenes/${orden.value.id}/estado`, { estado })
@@ -380,6 +437,71 @@ async function cambiarEstado(estado: string) {
           </div>
         </div>
       </main>
+
+      <!-- Modal de imagen requerida al finalizar -->
+      <Teleport to="body">
+        <Transition name="imagen-modal">
+          <div
+            v-if="modalImagenVisible"
+            class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            @click.self="modalImagenVisible = false"
+          >
+            <article class="w-full max-w-[40rem] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-8 rounded-2xl">
+              <header class="flex items-center justify-between mb-6">
+                <div>
+                  <h2 class="text-2xl font-bold text-slate-800 dark:text-white">Imagen requerida</h2>
+                  <p class="text-sm text-slate-500 mt-0.5">Sube una imagen para finalizar la orden</p>
+                </div>
+                <button class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 bg-transparent border-none cursor-pointer" @click="modalImagenVisible = false">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </header>
+
+              <div class="mb-6">
+                <div v-if="imagenUrlPendiente" class="flex flex-col gap-3">
+                  <img :src="imagenUrlPendiente" alt="Preview" class="w-full h-48 object-contain rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950" />
+                  <button type="button" class="text-sm font-medium text-red-500 bg-transparent border-none cursor-pointer hover:opacity-70 text-left" @click="quitarImagenEstado">Quitar imagen</button>
+                </div>
+                <label v-else class="flex flex-col items-center justify-center gap-2 w-full h-32 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-lg cursor-pointer hover:border-orange-500 transition-colors">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-slate-400">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span class="text-sm text-slate-500">Haz clic para subir imagen</span>
+                  <input type="file" accept="image/*" class="hidden" @change="handleImagenEstadoChange" />
+                </label>
+              </div>
+
+              <button
+                class="w-full py-3 text-lg font-semibold text-white bg-orange-500 border-none cursor-pointer hover:bg-orange-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed rounded-lg"
+                :disabled="!imagenUrlPendiente"
+                @click="confirmarEstadoConImagen"
+              >
+                Confirmar y finalizar
+              </button>
+            </article>
+          </div>
+        </Transition>
+      </Teleport>
     </div>
   </div>
 </template>
+
+<style scoped>
+.imagen-modal-enter-active,
+.imagen-modal-leave-active {
+  transition: opacity 0.2s ease;
+}
+.imagen-modal-enter-active article,
+.imagen-modal-leave-active article {
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.imagen-modal-enter-from,
+.imagen-modal-leave-to {
+  opacity: 0;
+}
+.imagen-modal-enter-from article,
+.imagen-modal-leave-to article {
+  transform: scale(0.97) translateY(10px);
+  opacity: 0;
+}
+</style>

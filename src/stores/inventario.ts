@@ -17,6 +17,7 @@ export interface ItemInventario {
   proveedor: string
   ubicacion: string
   notas: string
+  imagenUrl?: string
   createdAt: string
   updatedAt: string
 }

@@ -2,6 +2,7 @@
 import { ref, computed, inject, onMounted, type Ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useOrdenesStore, calcularSubtotal, calcularIVA, calcularTotal, ivaGlobal, type Orden } from '@/stores/ordenes'
+import { api } from '@/services/api'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import AppTopbar from '@/components/layout/AppTopbar.vue'
 import PagoModal from '@/components/PagoModal.vue'
@@ -61,6 +62,9 @@ function getEstado(o: Orden) {
 
 // ─── Modal de cobro al completar ─────────────────────────────────────────────
 const modalPagoVisible = ref(false)
+const modalImagenVisible = ref(false)
+const imagenUrlPendiente = ref('')
+const estadoPendiente = ref('')
 
 const totalOrden = computed(() =>
   orden.value ? calcularTotal(orden.value.lineas ?? [], orden.value.descuento) : 0,
@@ -69,15 +73,73 @@ const saldoPendienteOrden = computed(() =>
   orden.value ? Math.max(0, totalOrden.value - (orden.value.anticipo ?? 0)) : 0,
 )
 
+const estadosFinales = ['completado', 'entregado', 'finalizado']
+
 async function cambiarEstado(estado: string) {
   if (!orden.value) return
+
+  // Si es estado final y no tiene imagen, pedir imagen antes que todo
+  if (estadosFinales.includes(estado) && !orden.value.imagenUrl) {
+    estadoPendiente.value = estado
+    imagenUrlPendiente.value = ''
+    modalImagenVisible.value = true
+    return
+  }
+
   // Al marcar como completado, si hay saldo pendiente mostramos el modal de cobro
   if (estado === 'completado' && saldoPendienteOrden.value > 0) {
     modalPagoVisible.value = true
     return
   }
+
   await store.cambiarEstado(orden.value.id, estado)
   orden.value = await store.fetchOrden(orden.value.id)
+}
+
+async function handleImagenEstadoChange(e: Event) {
+  const target = e.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+  const reader = new FileReader()
+  reader.onloadend = async () => {
+    const base64 = reader.result as string
+    try {
+      const { url } = await api.post<{ url: string }>('/ordenes/upload', { imagen: base64 })
+      imagenUrlPendiente.value = url
+    } catch (err: any) {
+      const msg = err?.message || 'No se pudo subir la imagen'
+      Swal.fire({ title: 'Error', text: msg, icon: 'error' })
+    }
+  }
+  reader.readAsDataURL(file)
+}
+
+function quitarImagenEstado() {
+  imagenUrlPendiente.value = ''
+}
+
+async function confirmarEstadoConImagen() {
+  if (!orden.value || !estadoPendiente.value) return
+  if (!imagenUrlPendiente.value) {
+    Swal.fire({ title: 'Imagen requerida', text: 'Sube una imagen para finalizar la orden.', icon: 'warning' })
+    return
+  }
+  modalImagenVisible.value = false
+
+  // Si es completado y hay saldo pendiente, guardar imagen y mostrar modal de pago
+  if (estadoPendiente.value === 'completado' && saldoPendienteOrden.value > 0) {
+    await store.actualizar(orden.value.id, { imagenUrl: imagenUrlPendiente.value })
+    orden.value = await store.fetchOrden(orden.value.id)
+    modalPagoVisible.value = true
+    estadoPendiente.value = ''
+    imagenUrlPendiente.value = ''
+    return
+  }
+
+  await store.cambiarEstado(orden.value.id, estadoPendiente.value, imagenUrlPendiente.value)
+  orden.value = await store.fetchOrden(orden.value.id)
+  estadoPendiente.value = ''
+  imagenUrlPendiente.value = ''
 }
 
 async function alActualizarOrden() {
@@ -316,5 +378,70 @@ onMounted(async () => {
       @close="modalPagoVisible = false"
       @actualizada="alActualizarOrden"
     />
+
+    <!-- Modal de imagen requerida al finalizar -->
+    <Teleport to="body">
+      <Transition name="imagen-modal">
+        <div
+          v-if="modalImagenVisible"
+          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          @click.self="modalImagenVisible = false"
+        >
+          <article class="w-full max-w-[40rem] bg-surface dark:bg-dk-surface border border-border dark:border-dk-border shadow-2xl p-8">
+            <header class="flex items-center justify-between mb-6">
+              <div>
+                <h2 class="text-[2rem] font-light text-body dark:text-dk-body tracking-tight">Imagen requerida</h2>
+                <p class="text-[1.2rem] text-muted dark:text-dk-muted mt-0.5">Sube una imagen para finalizar la orden</p>
+              </div>
+              <button class="w-9 h-9 flex items-center justify-center text-muted dark:text-dk-muted hover:text-body dark:hover:text-dk-body bg-transparent border-none cursor-pointer transition-colors" @click="modalImagenVisible = false">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </header>
+
+            <div class="mb-6">
+              <div v-if="imagenUrlPendiente" class="flex flex-col gap-3">
+                <img :src="imagenUrlPendiente" alt="Preview" class="w-full h-48 object-contain rounded border border-border dark:border-dk-border bg-bg dark:bg-dk-bg" />
+                <button type="button" class="text-[1.2rem] font-medium text-red-500 bg-transparent border-none cursor-pointer hover:opacity-70 transition-opacity text-left" @click="quitarImagenEstado">Quitar imagen</button>
+              </div>
+              <label v-else class="flex flex-col items-center justify-center gap-2 w-full h-32 border-2 border-dashed border-border dark:border-dk-border rounded cursor-pointer hover:border-primary transition-colors">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-muted dark:text-dk-muted">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span class="text-[1.2rem] text-muted dark:text-dk-muted">Haz clic para subir imagen</span>
+                <input type="file" accept="image/*" class="hidden" @change="handleImagenEstadoChange" />
+              </label>
+            </div>
+
+            <button
+              class="w-full py-4 text-[1.4rem] font-semibold text-white bg-primary border-none cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+              :disabled="!imagenUrlPendiente"
+              @click="confirmarEstadoConImagen"
+            >
+              Confirmar y finalizar
+            </button>
+          </article>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
+
+<style scoped>
+.imagen-modal-enter-active,
+.imagen-modal-leave-active {
+  transition: opacity 0.2s ease;
+}
+.imagen-modal-enter-active article,
+.imagen-modal-leave-active article {
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.imagen-modal-enter-from,
+.imagen-modal-leave-to {
+  opacity: 0;
+}
+.imagen-modal-enter-from article,
+.imagen-modal-leave-to article {
+  transform: scale(0.97) translateY(10px);
+  opacity: 0;
+}
+</style>

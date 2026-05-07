@@ -58,52 +58,84 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <form class="w-full flex flex-col gap-8" @submit.prevent="handleSubmit">
-    <header class="flex flex-col gap-2">
-      <h2 class="text-[2.4rem] font-bold text-body">Iniciar Sesión</h2>
-      <p class="text-[1.4rem] text-muted">Ingresa tus credenciales para acceder al sistema</p>
+  <form class="w-full flex flex-col gap-6" @submit.prevent="handleSubmit">
+
+    <header class="flex flex-col gap-1.5">
+      <h2 class="text-2xl font-mono font-bold text-white tracking-tight">Acceso Personal</h2>
+      <p class="text-[11px] font-mono text-white/30 tracking-widest uppercase">Ingresa tus credenciales de sistema</p>
     </header>
 
+    <!-- Server error -->
     <section
       v-if="serverError"
-      class="px-5 py-4 bg-red-50 border border-red-200 text-[1.3rem] text-red-700 font-medium"
+      class="px-4 py-3 rounded-lg border border-red-500/20 bg-red-500/5 text-xs font-mono text-red-400/80"
     >
       {{ serverError }}
     </section>
 
-    <section class="flex flex-col gap-6">
-      <BaseInput
-        v-model="username"
-        label="Usuario"
-        type="text"
-        placeholder="admin"
-        :error="errors.username"
-      />
+    <section class="flex flex-col gap-4">
+      <!-- Usuario -->
+      <div class="flex flex-col gap-1.5">
+        <label class="text-[10px] font-mono tracking-widest uppercase text-white/30">Usuario</label>
+        <BaseInput
+          v-model="username"
+          type="text"
+          placeholder="admin"
+          :error="errors.username"
+          class="w-full rounded-lg border border-white/10 bg-white/[0.03] px-4 py-3 text-sm font-mono text-white/80 placeholder-white/15 focus:outline-none focus:border-[#00ffb4]/40 focus:bg-[#00ffb4]/[0.02] transition-all duration-200"
+          variant="form"
+        />
+      </div>
 
-      <BaseInput
-        v-model="password"
-        label="Contraseña"
-        type="password"
-        placeholder="••••••••"
-        :error="errors.password"
-      />
+      <!-- Contraseña -->
+      <div class="flex flex-col gap-1.5">
+        <label class="text-[10px] font-mono tracking-widest uppercase text-white/30">Contraseña</label>
+        <BaseInput
+          v-model="password"
+          type="password"
+          placeholder="••••••••"
+          :error="errors.password"
+          class="w-full rounded-lg border border-white/10 bg-white/[0.03] px-4 py-3 text-sm font-mono text-white/80 placeholder-white/15 focus:outline-none focus:border-[#00ffb4]/40 focus:bg-[#00ffb4]/[0.02] transition-all duration-200"
+          variant="form"
+        />
+      </div>
     </section>
 
     <footer class="flex items-center justify-between">
-      <label class="flex items-center gap-3 cursor-pointer">
-        <input v-model="rememberMe" type="checkbox" class="w-5 h-5 accent-primary cursor-pointer" />
-        <span class="text-[1.3rem] text-muted font-medium">Recordarme</span>
+      <label class="flex items-center gap-2.5 cursor-pointer group justify-center">
+        <div class=" shrink-0">
+          <input
+            v-model="rememberMe"
+            type="checkbox"
+            class="peer appearance-none w-4 h-4 rounded border border-white/15 bg-white/[0.03] checked:bg-[#00ffb4] checked:border-[#00ffb4] transition-all duration-200 cursor-pointer"
+          />
+          <svg
+            class="absolute inset-0 w-4 h-4 text-black opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity duration-200 p-0.5"
+            viewBox="0 0 16 16" fill="none"
+          >
+            <path d="M3 8l3.5 3.5L13 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span class="text-[11px] font-mono text-white/30 group-hover:text-white/50 tracking-wide transition-colors">Recordarme</span>
       </label>
-      <a
-        href="#"
-        class="text-[1.3rem] font-semibold text-primary no-underline hover:opacity-70 transition-opacity"
+
+      <RouterLink
+        :to="{ name: 'forgot-password', query: { type: 'staff' } }"
+        class="text-[11px] font-mono text-[#00ffb4]/60 no-underline hover:text-[#00ffb4] transition-colors tracking-wide"
       >
         ¿Olvidaste tu contraseña?
-      </a>
+      </RouterLink>
     </footer>
 
-    <BaseButton type="submit" variant="primary" :full-width="true" :loading="loading">
-      {{ loading ? 'Ingresando...' : 'Iniciar Sesión' }}
+    <BaseButton
+      type="submit"
+      variant="form"
+      :full-width="true"
+      :loading="loading"
+      class="w-full rounded-lg bg-[#00ffb4] hover:bg-[#00e6a0] disabled:opacity-30 py-3 text-xs font-mono font-bold text-black tracking-widest uppercase transition-all duration-200"
+    >
+      {{ loading ? '...' : 'Iniciar Sesión' }}
     </BaseButton>
+
   </form>
 </template>

@@ -20,6 +20,7 @@ export interface Vehiculo {
   clienteEmail: string
   estado: EstadoVehiculo
   notas: string
+  imagenUrl?: string
   createdAt: string
   updatedAt: string
 }
@@ -39,6 +40,7 @@ export interface CreateVehiculoPayload {
   clienteEmail?: string
   estado?: EstadoVehiculo
   notas?: string
+  imagenUrl?: string
 }
 
 export interface UpdateVehiculoPayload {
@@ -56,6 +58,7 @@ export interface UpdateVehiculoPayload {
   clienteEmail?: string
   estado?: EstadoVehiculo
   notas?: string
+  imagenUrl?: string
 }
 
 export const useVehiculosStore = defineStore('vehiculos', () => {

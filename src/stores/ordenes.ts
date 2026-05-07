@@ -35,6 +35,7 @@ export interface Orden {
   vehiculo: any
   mecanico: any
   promocion: any
+  imagenUrl?: string
   createdAt: string
   updatedAt: string
 }
@@ -53,6 +54,7 @@ export interface OrdenInput {
   descuento?: number
   promocionId?: number | null
   lineas?: Omit<OrdenLinea, 'id'>[]
+  imagenUrl?: string
 }
 
 export const useOrdenesStore = defineStore('ordenes', () => {
@@ -125,10 +127,12 @@ export const useOrdenesStore = defineStore('ordenes', () => {
     }
   }
 
-  async function cambiarEstado(id: number, estado: string): Promise<Orden | null> {
+  async function cambiarEstado(id: number, estado: string, imagenUrl?: string): Promise<Orden | null> {
     error.value = null
     try {
-      const updated = await api.put<Orden>(`/ordenes/${id}/estado`, { estado })
+      const payload: Record<string, unknown> = { estado }
+      if (imagenUrl) payload.imagenUrl = imagenUrl
+      const updated = await api.put<Orden>(`/ordenes/${id}/estado`, payload)
       const idx = ordenes.value.findIndex((o) => o.id === id)
       if (idx !== -1) ordenes.value[idx] = updated
       return updated
