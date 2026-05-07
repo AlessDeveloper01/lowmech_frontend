@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { inject, type Ref } from 'vue'
 
 const router = useRouter()
 const auth = useAuthStore()
+const collapsed = inject<Ref<boolean>>('sidebarCollapsed')!
 
 defineProps<{
   darkMode: boolean
@@ -36,10 +38,23 @@ const today = new Date().toLocaleDateString('es-MX', {
   <header
     class="sticky top-0 h-[6.5rem] bg-navy flex items-center justify-between px-10 z-[100] max-[768px]:px-5"
   >
-    <!-- Left: date -->
-    <time class="text-[1.2rem] text-white/50 capitalize" :datetime="new Date().toISOString()">
-      {{ today }}
-    </time>
+    <!-- Left: hamburger (móvil) + date -->
+    <div class="flex items-center gap-4">
+      <!-- Botón hamburguesa solo en móvil -->
+      <button
+        class="hidden max-[768px]:flex items-center justify-center w-9 h-9 text-white/60 hover:text-white border-none bg-transparent cursor-pointer"
+        @click="collapsed = !collapsed"
+        aria-label="Abrir menú"
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+
+      <time class="text-[1.2rem] text-white/50 capitalize" :datetime="new Date().toISOString()">
+        {{ today }}
+      </time>
+    </div>
 
     <!-- Right: Navigation and user controls -->
     <nav class="flex items-center gap-6">

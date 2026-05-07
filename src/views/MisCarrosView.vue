@@ -173,27 +173,44 @@
 
             <div class="z-10 relative">
               <div class="flex items-start justify-between gap-3 mb-6">
-                <div class="flex-1">
-                  <h2 class="font-extrabold text-slate-800 dark:text-white text-2xl truncate">
-                    {{ v.nombre }}
-                  </h2>
-                  <p class="font-bold text-orange-500 mt-1 flex items-center gap-1.5">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      class="w-4 h-4"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
-                      <path
-                        fill-rule="evenodd"
-                        d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z"
-                        clip-rule="evenodd"
-                      />
-                    </svg>
-                    {{ v.marca }} {{ v.modelo }} {{ v.anio }}
-                  </p>
-                </div>
-              </div>
+  <!-- Imagen del vehículo -->
+  <div class="w-16 h-16 rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0 flex items-center justify-center">
+    <img
+      v-if="v.imagenUrl"
+      :src="v.imagenUrl"
+      :alt="v.nombre"
+      class="w-full h-full object-cover"
+    />
+    <svg
+      v-else
+      xmlns="http://www.w3.org/2000/svg"
+      class="h-8 w-8 text-slate-400"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      stroke-width="1.5"
+    >
+      <path stroke-linecap="round" stroke-linejoin="round"
+        d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"/>
+      <path stroke-linecap="round" stroke-linejoin="round"
+        d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10l2 .001M13 16l2 .001M13 16H9m4 0h2m0 0h2a1 1 0 001-1v-3.34a1 1 0 00-.26-.67L17 8.34A1 1 0 0016.26 8H13"/>
+    </svg>
+  </div>
+
+  <div class="flex-1 min-w-0">
+    <h2 class="font-extrabold text-slate-800 dark:text-white text-2xl truncate">
+      {{ v.nombre }}
+    </h2>
+    <p class="font-bold text-orange-500 mt-1 flex items-center gap-1.5">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd"
+          d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z"
+          clip-rule="evenodd"/>
+      </svg>
+      {{ v.marca }} {{ v.modelo }} {{ v.anio }}
+    </p>
+  </div>
+</div>
 
               <div class="mb-6">
                 <span
@@ -442,6 +459,7 @@ interface VehiculoMini {
   kilometraje: number
   combustible: string
   estado: string
+  imagenUrl?: string
 }
 
 const authStore = useAuthStore()

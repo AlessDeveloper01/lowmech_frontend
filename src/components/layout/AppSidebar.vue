@@ -66,9 +66,18 @@ function isActive(ruta: string): boolean {
 </script>
 
 <template>
+    <template>
+<div
+    v-if="!collapsed"
+    class="fixed inset-0 z-[999] bg-black/50 hidden max-[768px]:block"
+    @click="collapsed = true"
+  />
+
   <aside
-    class="fixed left-0 top-0 h-screen bg-navy flex flex-col z-[1000] transition-all duration-300 ease-out max-[768px]:-translate-x-full"
-    :class="collapsed ? 'w-[6.4rem]' : 'w-[22rem]'"
+    class="fixed left-0 top-0 h-screen bg-navy flex flex-col z-[1000] transition-all duration-300 ease-out max-[768px]:w-[22rem]"
+    :class="[
+      collapsed ? 'w-[6.4rem] max-[768px]:-translate-x-full' : 'w-[22rem] max-[768px]:translate-x-0'
+    ]"
   >
     <!-- Logo -->
     <header class="h-[6.5rem] flex items-center px-6 shrink-0">
@@ -169,4 +178,5 @@ function isActive(ruta: string): boolean {
       </button>
     </footer>
   </aside>
+</template>
 </template>
